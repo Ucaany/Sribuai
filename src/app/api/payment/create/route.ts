@@ -61,8 +61,9 @@ export async function POST(request: NextRequest) {
       description: pkg.label,
       expires_at: qris.expiredAt,
     })
-  } catch {
+  } catch (err) {
+    console.error('[payment/create] KlikQRIS error:', err)
     await serviceClient.from('transactions').update({ status: 'failed' }).eq('id', tx.id)
-    return NextResponse.json({ error: 'Payment gateway error. Coba lagi.' }, { status: 503 })
+    return NextResponse.json({ error: 'Payment gateway error. Coba lagi.', detail: String(err) }, { status: 503 })
   }
 }
