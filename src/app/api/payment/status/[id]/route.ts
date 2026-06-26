@@ -31,7 +31,7 @@ export async function GET(
     try {
       const gwStatus = await getTransactionStatus(tx.gateway_transaction_id)
 
-      if (gwStatus.status === 'success') {
+      if (gwStatus.status === 'SUCCESS') {
         // atomic claim — only activate if still pending to prevent double-activation
         const { data: claimedTx } = await serviceClient
           .from('transactions')
@@ -47,7 +47,7 @@ export async function GET(
         return NextResponse.json({ status: 'success' })
       }
 
-      if (gwStatus.status === 'expired') {
+      if (gwStatus.status === 'EXPIRED') {
         await serviceClient.from('transactions').update({ status: 'expired' }).eq('id', tx.id)
         return NextResponse.json({ status: 'expired' })
       }

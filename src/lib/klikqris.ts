@@ -1,11 +1,11 @@
-import { createHmac, timingSafeEqual } from 'crypto'
+const BASE_URL = process.env.KLIKQRIS_BASE_URL || 'https://klikqris.com/api'
 
-const BASE_URL = process.env.KLIKQRIS_BASE_URL || 'https://klikqris.com/api/sandbox'
-
-function getApiKey(): string {
-  const key = process.env.KLIKQRIS_API_KEY
-  if (!key) throw new Error('KLIKQRIS_API_KEY env var is not set')
-  return key
+function getCredentials(): { apiKey: string; merchantId: string } {
+  const apiKey = process.env.KLIKQRIS_API_KEY
+  const merchantId = process.env.KLIKQRIS_MERCHANT_ID
+  if (!apiKey) throw new Error('KLIKQRIS_API_KEY env var is not set')
+  if (!merchantId) throw new Error('KLIKQRIS_MERCHANT_ID env var is not set')
+  return { apiKey, merchantId }
 }
 
 export interface CreateTransactionParams {
@@ -24,16 +24,20 @@ export interface TransactionResult {
 export async function createQrisTransaction(
   params: CreateTransactionParams
 ): Promise<TransactionResult> {
-  const response = await fetch(`${BASE_URL}/transaksi/buat`, {
+  const { apiKey, merchantId } = getCredentials()
+
+  const response = await fetch(`${BASE_URL}/qris/create`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${getApiKey()}`,
+      'x-api-key': apiKey,
+      'id_merchant': merchantId,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      nominal: params.nominal,
+      order_id: params.refId,
+      amount: params.nominal,
+      id_merchant: merchantId,
       keterangan: params.keterangan,
-      ref_id: params.refId,
     }),
   })
 
@@ -43,44 +47,39 @@ export async function createQrisTransaction(
   }
 
   const data = await response.json()
+  if (!data.status) throw new Error(`KlikQRIS error: ${data.message}`)
+
   return {
-    gatewayId: data.data.id,
-    qrString: data.data.qr_string,
-    qrUrl: data.data.qr_url,
+    gatewayId: data.data.order_id,
+    qrString: data.data.signature,
+    qrUrl: data.data.qris_url,
     expiredAt: data.data.expired_at,
   }
 }
 
-export async function getTransactionStatus(gatewayId: string) {
-  const response = await fetch(
-    `${BASE_URL}/transaksi/status/${gatewayId}`,
-    {
-      headers: { Authorization: `Bearer ${getApiKey()}` },
-    }
-  )
+export async function getTransactionStatus(orderId: string) {
+  const { apiKey, merchantId } = getCredentials()
+
+  const response = await fetch(`${BASE_URL}/qris/status/${orderId}`, {
+    headers: {
+      'x-api-key': apiKey,
+      'id_merchant': merchantId,
+    },
+  })
   if (!response.ok) throw new Error('KlikQRIS status check failed')
   const data = await response.json()
   return data.data as {
-    id: string
-    status: 'pending' | 'success' | 'expired' | 'failed'
+    order_id: string
+    status: 'PENDING' | 'SUCCESS' | 'EXPIRED'
     paid_at?: string
-    nominal: number
+    total_amount: number
   }
 }
 
 export function verifyWebhookSignature(payload: string, signature: string): boolean {
-  const secret = process.env.KLIKQRIS_WEBHOOK_SECRET
-  if (!secret) {
-    console.error('[klikqris] KLIKQRIS_WEBHOOK_SECRET env var is not set — rejecting all webhooks')
-    return false
-  }
-
-  const expected = createHmac('sha256', secret)
-    .update(payload)
-    .digest()
-
-  const signatureBuf = Buffer.from(signature, 'hex')
-  if (expected.length !== signatureBuf.length) return false
-
-  return timingSafeEqual(expected, signatureBuf)
+  const txSignature = (() => {
+    try { return JSON.parse(payload)?.signature } catch { return null }
+  })()
+  if (!txSignature) return false
+  return txSignature === signature
 }

@@ -1,33 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { verifyWebhookSignature } from '@/lib/klikqris'
 import { activatePayment } from '@/lib/subscription'
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()
-  const signature = request.headers.get('x-klikqris-signature') || ''
+  let payload: { order_id: string; status: string; paid_at?: string; signature?: string }
 
-  if (!verifyWebhookSignature(rawBody, signature)) {
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  try {
+    payload = JSON.parse(rawBody)
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const payload = JSON.parse(rawBody)
   const supabase = await createServiceClient()
 
   const { data: webhookLog } = await supabase
     .from('webhook_logs')
-    .insert({ source: 'klikqris', event_type: payload.event, payload, status: 'processing' })
+    .insert({ source: 'klikqris', event_type: payload.status, payload, status: 'processing' })
     .select('id')
     .single()
 
   try {
-    if (payload.event === 'payment.success') {
-      const { ref_id, paid_at } = payload.data
+    if (payload.status === 'PAID') {
+      const { order_id, paid_at } = payload
 
       const { data: claimedTx } = await supabase
         .from('transactions')
-        .update({ status: 'success', paid_at })
-        .eq('id', ref_id)
+        .update({ status: 'success', paid_at: paid_at ?? new Date().toISOString() })
+        .eq('gateway_transaction_id', order_id)
         .eq('status', 'pending')
         .select('*')
         .single()
@@ -39,11 +39,23 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ ok: true })
       }
 
-      await activatePayment(supabase, claimedTx, paid_at, { skipTransactionUpdate: true })
+      await activatePayment(supabase, claimedTx, paid_at ?? new Date().toISOString(), { skipTransactionUpdate: true })
 
       await supabase.from('webhook_logs')
-          .update({ status: 'success', transaction_id: claimedTx.id, processed_at: new Date().toISOString() })
-          .eq('id', webhookLog?.id)
+        .update({ status: 'success', transaction_id: claimedTx.id, processed_at: new Date().toISOString() })
+        .eq('id', webhookLog?.id)
+    }
+
+    if (payload.status === 'EXPIRED') {
+      await supabase
+        .from('transactions')
+        .update({ status: 'expired' })
+        .eq('gateway_transaction_id', payload.order_id)
+        .eq('status', 'pending')
+
+      await supabase.from('webhook_logs')
+        .update({ status: 'success', processed_at: new Date().toISOString() })
+        .eq('id', webhookLog?.id)
     }
 
     return NextResponse.json({ ok: true })
