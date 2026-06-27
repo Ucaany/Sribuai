@@ -14,8 +14,8 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Sribuai APIRouter - 37+ Model AI dalam 1 API | Harga Terjangkau',
-  description: 'Akses Claude, GPT-4, Gemini, DeepSeek dan 37+ model AI lainnya melalui satu API OpenAI-compatible. Bayar via QRIS. Mulai gratis hari ini.',
-  keywords: 'API AI Indonesia, Claude API, GPT-4 API, AI Gateway, OpenAI alternative Indonesia',
+  description: 'Akses 37+ model AI premium melalui satu API OpenAI-compatible. Bayar via QRIS. Mulai gratis hari ini.',
+  keywords: 'API AI Indonesia, AI Gateway, OpenAI compatible Indonesia, AI murah',
   openGraph: {
     title: 'Sribuai APIRouter - 37+ Model AI dalam 1 API',
     description: 'Akses 37+ model AI premium dengan harga terjangkau. Bayar via QRIS.',
@@ -42,7 +42,7 @@ export default function HomePage() {
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex size-2 rounded-full bg-green-500" />
               </span>
-              Tersedia: Claude 4.5 • GPT-4 • Gemini Pro • DeepSeek V3
+              37+ Model AI Premium Tersedia Sekarang
             </div>
 
             <h1 className="max-w-4xl text-4xl tracking-tight md:text-6xl lg:text-7xl">
@@ -52,7 +52,8 @@ export default function HomePage() {
             </h1>
 
             <p className="max-w-2xl text-lg text-muted-foreground md:text-xl">
-              Akses <span className="font-serif">Claude, GPT-4, Gemini, DeepSeek</span> dan banyak lagi melalui satu endpoint OpenAI-compatible.
+              Akses puluhan model AI terbaik melalui satu endpoint OpenAI-compatible.
+              Dikembangkan oleh <span className="font-serif">Sribuai API Router</span>.
               Mulai gratis, upgrade kapan saja.
             </p>
 

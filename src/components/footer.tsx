@@ -83,8 +83,8 @@ const company = [
 		href: "/tentang",
 	},
 	{
-		title: "Karir",
-		href: "/karir",
+		title: "Kontak",
+		href: "/contact",
 	},
 	{
 		title: "Kebijakan Privasi",
