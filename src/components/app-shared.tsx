@@ -15,6 +15,7 @@ import {
   SlidersIcon,
   TagIcon,
   WebhookIcon,
+  FlaskConicalIcon,
 } from "lucide-react";
 
 export type SidebarNavItem = {
@@ -54,6 +55,11 @@ export const navGroups: SidebarNavGroup[] = [
         title: "Models",
         path: "/dashboard/models",
         icon: <CpuIcon />,
+      },
+      {
+        title: "Playground",
+        path: "/dashboard/playground",
+        icon: <FlaskConicalIcon />,
       },
     ],
   },
