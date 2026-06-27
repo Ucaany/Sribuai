@@ -25,6 +25,53 @@ const EMPTY_FORM = {
   context_window: 128000, supports_streaming: true, is_active: true, sort_order: 0, description: '',
 }
 
+type FormState = typeof EMPTY_FORM
+
+function ModelForm({ form, setForm, editModel }: { form: FormState; setForm: React.Dispatch<React.SetStateAction<FormState>>; editModel: ModelConfig | null }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-2">
+          <Label>Model ID</Label>
+          <Input value={form.model_id} onChange={(e) => setForm(f => ({ ...f, model_id: e.target.value }))} placeholder="claude-sonnet-4-5" disabled={!!editModel} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>Display Name</Label>
+          <Input value={form.model_name} onChange={(e) => setForm(f => ({ ...f, model_name: e.target.value }))} placeholder="Claude Sonnet 4.5" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>Provider</Label>
+          <Input value={form.provider} onChange={(e) => setForm(f => ({ ...f, provider: e.target.value }))} placeholder="Anthropic" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>Router Model ID</Label>
+          <Input value={form.router_model_id} onChange={(e) => setForm(f => ({ ...f, router_model_id: e.target.value }))} placeholder="anthropic/claude-sonnet-4-5" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>Context Window</Label>
+          <Input type="number" value={form.context_window} onChange={(e) => setForm(f => ({ ...f, context_window: parseInt(e.target.value) || 0 }))} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>Sort Order</Label>
+          <Input type="number" value={form.sort_order} onChange={(e) => setForm(f => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))} />
+        </div>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label>Deskripsi</Label>
+        <Input value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Deskripsi singkat model" />
+      </div>
+      <div className="flex items-center justify-between">
+        <Label>Enable Streaming</Label>
+        <Switch checked={form.supports_streaming} onCheckedChange={(v) => setForm(f => ({ ...f, supports_streaming: v }))} />
+      </div>
+      <div className="flex items-center justify-between">
+        <Label>Aktif</Label>
+        <Switch checked={form.is_active} onCheckedChange={(v) => setForm(f => ({ ...f, is_active: v }))} />
+      </div>
+    </div>
+  )
+}
+
 export default function AdminModelsPage() {
   const [models, setModels] = useState<ModelConfig[]>([])
   const [loading, setLoading] = useState(true)
@@ -111,49 +158,6 @@ export default function AdminModelsPage() {
     fetchModels()
   }
 
-  const ModelForm = () => (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-2">
-          <Label>Model ID</Label>
-          <Input value={form.model_id} onChange={(e) => setForm(f => ({ ...f, model_id: e.target.value }))} placeholder="claude-sonnet-4-5" disabled={!!editModel} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>Display Name</Label>
-          <Input value={form.model_name} onChange={(e) => setForm(f => ({ ...f, model_name: e.target.value }))} placeholder="Claude Sonnet 4.5" />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>Provider</Label>
-          <Input value={form.provider} onChange={(e) => setForm(f => ({ ...f, provider: e.target.value }))} placeholder="Anthropic" />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>Router Model ID</Label>
-          <Input value={form.router_model_id} onChange={(e) => setForm(f => ({ ...f, router_model_id: e.target.value }))} placeholder="anthropic/claude-sonnet-4-5" />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>Context Window</Label>
-          <Input type="number" value={form.context_window} onChange={(e) => setForm(f => ({ ...f, context_window: parseInt(e.target.value) || 0 }))} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label>Sort Order</Label>
-          <Input type="number" value={form.sort_order} onChange={(e) => setForm(f => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))} />
-        </div>
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label>Deskripsi</Label>
-        <Input value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Deskripsi singkat model" />
-      </div>
-      <div className="flex items-center justify-between">
-        <Label>Enable Streaming</Label>
-        <Switch checked={form.supports_streaming} onCheckedChange={(v) => setForm(f => ({ ...f, supports_streaming: v }))} />
-      </div>
-      <div className="flex items-center justify-between">
-        <Label>Aktif</Label>
-        <Switch checked={form.is_active} onCheckedChange={(v) => setForm(f => ({ ...f, is_active: v }))} />
-      </div>
-    </div>
-  )
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -165,10 +169,10 @@ export default function AdminModelsPage() {
           <DialogTrigger render={<Button size="sm" />}>
             <PlusIcon className="mr-2 size-4" /> Tambah Model
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>Tambah Model Baru</DialogTitle></DialogHeader>
-            <ModelForm />
-            <Button onClick={handleAdd} disabled={saving || !form.model_id || !form.model_name}>
+            <DialogContent className="max-w-lg">
+                        <DialogHeader><DialogTitle>Tambah Model Baru</DialogTitle></DialogHeader>
+                        <ModelForm form={form} setForm={setForm} editModel={editModel} />
+                        <Button onClick={handleAdd} disabled={saving || !form.model_id || !form.model_name}>
               {saving ? 'Menyimpan...' : 'Tambah Model'}
             </Button>
           </DialogContent>
@@ -228,7 +232,7 @@ export default function AdminModelsPage() {
                             </DialogTrigger>
                             <DialogContent className="max-w-lg">
                               <DialogHeader><DialogTitle>Edit {model.model_name}</DialogTitle></DialogHeader>
-                              <ModelForm />
+                              <ModelForm form={form} setForm={setForm} editModel={editModel} />
                               <Button onClick={handleEdit} disabled={saving}>
                                 {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
                               </Button>
